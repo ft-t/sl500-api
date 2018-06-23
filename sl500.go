@@ -1,25 +1,26 @@
 package sl500_api
 
 import (
-	"github.com/tarm/serial"
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	"log"
-	"encoding/binary"
-	"bytes"
 	"time"
+
+	"github.com/tarm/serial"
 )
 
 var Baud = baudRegistry()
 
 func baudRegistry() *baudList {
 	return &baudList{
-		Baud4800: baud{0, 4800},
-		Baud9600: baud{1, 9600},
-		Baud14400: baud{2, 14400},
-		Baud19200: baud{3, 19200},
-		Baud28800: baud{4, 28800},
-		Baud38400: baud{5, 38400},
-		Baud57600: baud{6, 57600},
+		Baud4800:   baud{0, 4800},
+		Baud9600:   baud{1, 9600},
+		Baud14400:  baud{2, 14400},
+		Baud19200:  baud{3, 19200},
+		Baud28800:  baud{4, 28800},
+		Baud38400:  baud{5, 38400},
+		Baud57600:  baud{6, 57600},
 		Baud115200: baud{7, 115200},
 	}
 }
@@ -33,13 +34,13 @@ const (
 )
 
 type baudList struct {
-	Baud4800 baud
-	Baud9600 baud
-	Baud14400 baud
-	Baud19200 baud
-	Baud28800 baud
-	Baud38400 baud
-	Baud57600 baud
+	Baud4800   baud
+	Baud9600   baud
+	Baud14400  baud
+	Baud19200  baud
+	Baud28800  baud
+	Baud38400  baud
+	Baud57600  baud
 	Baud115200 baud
 }
 
@@ -98,18 +99,22 @@ func (s *Sl500) RfGetDeviceNumber() ([]byte, error) {
 	sendRequest(s.port, 0x0301, []byte{})
 	return readResponse(s.port)
 }
+
 func (s *Sl500) RfAntennaSta(antennaState byte) ([]byte, error) {
 	sendRequest(s.port, 0x0C01, []byte{antennaState})
 	return readResponse(s.port)
 }
+
 func (s *Sl500) RfInitType(workType byte) ([]byte, error) {
 	sendRequest(s.port, 0x0801, []byte{workType})
 	return readResponse(s.port)
 }
+
 func (s *Sl500) RfBeep(durationMs byte) ([]byte, error) {
 	sendRequest(s.port, 0x0601, []byte{durationMs})
 	return readResponse(s.port)
 }
+
 func readResponse(port *serial.Port) ([]byte, error) {
 	var buf []byte
 	innerBuf := make([]byte, 128)
@@ -140,15 +145,27 @@ func readResponse(port *serial.Port) ([]byte, error) {
 		if int(buf[2]) != len(buf)-4 {
 			continue
 		}
-		break
 
+		break
 	}
 	if buf[0] != 0xAA || buf[1] != 0xBB {
 		return nil, fmt.Errorf("Response format invalid")
 	}
 
-	return buf, nil
+	buf = buf[3:]
+	ver := byte(0x00)
+
+	for _, k := range buf[:len(buf)-1] {
+		ver = ver ^ k
+	}
+
+	if ver != buf[len(buf)-1] {
+		return nil, fmt.Errorf("Response verification failed")
+	}
+
+	return buf[3 : len(buf)-1], nil
 }
+
 func sendRequest(port *serial.Port, commandCode int16, bytesData []byte) {
 	buf := new(bytes.Buffer)
 
