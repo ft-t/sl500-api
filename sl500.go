@@ -80,21 +80,6 @@ func NewConnection(path string, baud baud) (Sl500, error) {
 		return res, err
 	}
 
-	_, err = res.RfInitType(Type_ISO)
-	if err != nil {
-		return res, err
-	}
-
-	_, err = res.RfAntennaSta(AntennaOff)
-	if err != nil {
-		return res, err
-	}
-
-	_, err = res.RfGetDeviceNumber()
-	if err != nil {
-		return res, err
-	}
-
 	return res, nil
 }
 
@@ -245,7 +230,7 @@ func readResponse(port *serial.Port) ([]byte, error) {
 		return nil, fmt.Errorf("Response status is fail")
 	}
 
-	buf = buf[3:]
+	buf = buf[4:]
 	ver := byte(0x00)
 
 	for _, k := range buf[:len(buf)-1] {
@@ -256,7 +241,7 @@ func readResponse(port *serial.Port) ([]byte, error) {
 		return nil, fmt.Errorf("Response verification failed")
 	}
 
-	buf = buf[4 : len(buf)-1]
+	buf = buf[5 : len(buf)-1]
 
 	return buf, nil
 }
