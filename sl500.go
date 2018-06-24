@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/tarm/serial"
@@ -271,8 +270,6 @@ func sendRequest(port *serial.Port, commandCode int16, bytesData ...[]byte) {
 		ver = ver ^ k
 	}
 	binary.Write(buf, binary.BigEndian, ver)
-
-	log.Println(buf.Bytes())
 
 	port.Write(buf.Bytes())
 }
