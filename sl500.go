@@ -3,6 +3,7 @@ package sl500_api
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"time"
 
@@ -57,11 +58,13 @@ type baud struct {
 }
 
 type Sl500 struct {
-	config *serial.Config
-	port   *serial.Port
+	config  *serial.Config
+	port    *serial.Port
+	logging bool
+	open    bool
 }
 
-func NewConnection(path string, baud baud) (Sl500, error) {
+func NewConnection(path string, baud baud, logging bool) (Sl500, error) {
 	c := &serial.Config{Name: path, Baud: baud.IntValue, ReadTimeout: 5 * time.Second} // TODO
 	o, err := serial.OpenPort(c)
 
@@ -73,6 +76,8 @@ func NewConnection(path string, baud baud) (Sl500, error) {
 
 	res.config = c
 	res.port = o
+	res.logging = logging
+	res.open = true
 
 	_, err = res.RfInitCom(baud.ByteValue)
 	if err != nil {
@@ -82,112 +87,237 @@ func NewConnection(path string, baud baud) (Sl500, error) {
 	return res, nil
 }
 
+func (s *Sl500) Open() error {
+	p, err := serial.OpenPort(s.config)
+
+	if err != nil {
+		return err
+	}
+
+	s.port = p
+	s.open = true
+
+	return nil
+}
+
+func (s *Sl500) Close() error {
+	err := s.port.Close()
+	s.open = false
+
+	return err
+}
+
 func (s *Sl500) RfInitCom(baud byte) ([]byte, error) {
-	sendRequest(s.port, 0x0101, []byte{baud})
-	return readResponse(s.port)
+	err := sendRequest(s, 0x0101, []byte{baud})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return readResponse(s)
 }
 
 func (s *Sl500) RfInitDeviceNumber(deviceId []byte) ([]byte, error) {
-	sendRequest(s.port, 0x0201, deviceId)
-	return readResponse(s.port)
+	err := sendRequest(s, 0x0201, deviceId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return readResponse(s)
 }
 
 func (s *Sl500) RfGetDeviceNumber() ([]byte, error) {
-	sendRequest(s.port, 0x0301, []byte{})
-	return readResponse(s.port)
+	err := sendRequest(s, 0x0301, []byte{})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return readResponse(s)
 }
 
 func (s *Sl500) RfGetModel() ([]byte, error) {
-	sendRequest(s.port, 0x0401, []byte{})
-	return readResponse(s.port)
+	err := sendRequest(s, 0x0401, []byte{})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return readResponse(s)
 }
 
 func (s *Sl500) RfAntennaSta(antennaState byte) ([]byte, error) {
-	sendRequest(s.port, 0x0C01, []byte{antennaState})
-	return readResponse(s.port)
+	err := sendRequest(s, 0x0C01, []byte{antennaState})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return readResponse(s)
 }
 
 func (s *Sl500) RfInitType(workType byte) ([]byte, error) {
-	sendRequest(s.port, 0x0801, []byte{workType})
-	return readResponse(s.port)
+	err := sendRequest(s, 0x0801, []byte{workType})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return readResponse(s)
 }
 
 func (s *Sl500) RfBeep(durationMs byte) ([]byte, error) {
-	sendRequest(s.port, 0x0601, []byte{durationMs})
-	return readResponse(s.port)
+	err := sendRequest(s, 0x0601, []byte{durationMs})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return readResponse(s)
 }
 
 func (s *Sl500) RfLight(color byte) ([]byte, error) {
-	sendRequest(s.port, 0x0701, []byte{color})
-	return readResponse(s.port)
+	err := sendRequest(s, 0x0701, []byte{color})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return readResponse(s)
 }
 
 func (s *Sl500) RfRequest(requestType byte) ([]byte, error) {
-	sendRequest(s.port, 0x0102, []byte{requestType})
-	return readResponse(s.port)
+	err := sendRequest(s, 0x0102, []byte{requestType})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return readResponse(s)
 }
 
 func (s *Sl500) RfAnticoll() ([]byte, error) {
-	sendRequest(s.port, 0x0202, []byte{})
-	return readResponse(s.port)
+	err := sendRequest(s, 0x0202, []byte{})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return readResponse(s)
 }
 
 func (s *Sl500) RfSelect(serialNumber []byte) ([]byte, error) {
-	sendRequest(s.port, 0x0302, serialNumber)
-	return readResponse(s.port)
+	err := sendRequest(s, 0x0302, serialNumber)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return readResponse(s)
 }
 
 func (s *Sl500) RfHalt() ([]byte, error) {
-	sendRequest(s.port, 0x0402, []byte{})
-	return readResponse(s.port)
+	err := sendRequest(s, 0x0402, []byte{})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return readResponse(s)
 }
 
 func (s *Sl500) RfM1Authentication2(authMode byte, blockNumber byte, key []byte) ([]byte, error) {
-	sendRequest(s.port, 0x0702, []byte{authMode, blockNumber}, key)
-	return readResponse(s.port)
+	err := sendRequest(s, 0x0702, []byte{authMode, blockNumber}, key)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return readResponse(s)
 }
 
 func (s *Sl500) RfM1Read(blockNumber byte) ([]byte, error) {
-	sendRequest(s.port, 0x0802, []byte{blockNumber})
-	return readResponse(s.port)
+	err := sendRequest(s, 0x0802, []byte{blockNumber})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return readResponse(s)
 }
 
 func (s *Sl500) RfM1Write(blockNumber byte, data []byte) ([]byte, error) {
-	sendRequest(s.port, 0x0902, []byte{blockNumber}, data)
-	return readResponse(s.port)
+	err := sendRequest(s, 0x0902, []byte{blockNumber}, data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return readResponse(s)
 }
 
 func (s *Sl500) RfM1Initval(blockNumber byte, initialValue []byte) ([]byte, error) {
-	sendRequest(s.port, 0x0A02, []byte{blockNumber}, initialValue)
-	return readResponse(s.port)
+	err := sendRequest(s, 0x0A02, []byte{blockNumber}, initialValue)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return readResponse(s)
 }
 
 func (s *Sl500) RfM1Readval(blockNumber byte) ([]byte, error) {
-	sendRequest(s.port, 0x0B02, []byte{blockNumber})
-	return readResponse(s.port)
+	err := sendRequest(s, 0x0B02, []byte{blockNumber})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return readResponse(s)
 }
 
 func (s *Sl500) RfM1Decrement(blockNumber byte, decrementValue []byte) ([]byte, error) {
-	sendRequest(s.port, 0x0C02, []byte{blockNumber}, decrementValue)
-	return readResponse(s.port)
+	err := sendRequest(s, 0x0C02, []byte{blockNumber}, decrementValue)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return readResponse(s)
 }
 
 func (s *Sl500) RfM1Increment(blockNumber byte, incrementValue []byte) ([]byte, error) {
-	sendRequest(s.port, 0x0D02, []byte{blockNumber}, incrementValue)
-	return readResponse(s.port)
+	err := sendRequest(s, 0x0D02, []byte{blockNumber}, incrementValue)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return readResponse(s)
 }
 
 func (s *Sl500) RfM1Restore(blockNumber byte) ([]byte, error) {
-	sendRequest(s.port, 0x0E02, []byte{blockNumber})
-	return readResponse(s.port)
+	err := sendRequest(s, 0x0E02, []byte{blockNumber})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return readResponse(s)
 }
 
 func (s *Sl500) RfM1Transfer(blockNumber byte) ([]byte, error) {
-	sendRequest(s.port, 0x0F02, []byte{blockNumber})
-	return readResponse(s.port)
+	err := sendRequest(s, 0x0F02, []byte{blockNumber})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return readResponse(s)
 }
 
-func readResponse(port *serial.Port) ([]byte, error) {
+func readResponse(s *Sl500) ([]byte, error) {
 	var buf []byte
 	innerBuf := make([]byte, 128)
 
@@ -202,7 +332,7 @@ func readResponse(port *serial.Port) ([]byte, error) {
 			return nil, fmt.Errorf("Reads tries exceeded")
 		}
 
-		n, err := port.Read(innerBuf)
+		n, err := s.port.Read(innerBuf)
 
 		if err != nil {
 			return nil, err
@@ -242,10 +372,18 @@ func readResponse(port *serial.Port) ([]byte, error) {
 
 	buf = buf[5 : len(buf)-1]
 
+	if s.logging {
+		fmt.Printf("<- %X\n", buf)
+	}
+
 	return buf, nil
 }
 
-func sendRequest(port *serial.Port, commandCode int16, bytesData ...[]byte) {
+func sendRequest(s *Sl500, commandCode int16, bytesData ...[]byte) error {
+	if !s.open {
+		return errors.New("serial port is closed")
+	}
+
 	buf := new(bytes.Buffer)
 
 	ver := byte(0x00)
@@ -255,21 +393,27 @@ func sendRequest(port *serial.Port, commandCode int16, bytesData ...[]byte) {
 		length += len(b)
 	}
 
-	binary.Write(buf, binary.BigEndian, byte(0xAA))
-	binary.Write(buf, binary.BigEndian, byte(0xBB))
-	binary.Write(buf, binary.BigEndian, byte(length))
-	binary.Write(buf, binary.BigEndian, byte(0x00))
-	binary.Write(buf, binary.BigEndian, int16(0)) // device id
-	binary.Write(buf, binary.BigEndian, commandCode)
+	_ = binary.Write(buf, binary.BigEndian, byte(0xAA))
+	_ = binary.Write(buf, binary.BigEndian, byte(0xBB))
+	_ = binary.Write(buf, binary.BigEndian, byte(length))
+	_ = binary.Write(buf, binary.BigEndian, byte(0x00))
+	_ = binary.Write(buf, binary.BigEndian, int16(0)) // device id
+	_ = binary.Write(buf, binary.BigEndian, commandCode)
 
 	for _, data := range bytesData {
-		binary.Write(buf, binary.BigEndian, data)
+		_ = binary.Write(buf, binary.BigEndian, data)
 	}
 
 	for _, k := range buf.Bytes()[3:] {
 		ver = ver ^ k
 	}
-	binary.Write(buf, binary.BigEndian, ver)
+	_ = binary.Write(buf, binary.BigEndian, ver)
 
-	port.Write(buf.Bytes())
+	if s.logging {
+		fmt.Printf("-> %X\n", buf.Bytes())
+	}
+
+	_, err := s.port.Write(buf.Bytes())
+
+	return err
 }
