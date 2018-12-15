@@ -344,7 +344,7 @@ func readResponse(s *Sl500) ([]byte, error) {
 		if totalRead < 3 {
 			continue
 		}
-		if int(buf[2]) != len(buf)-4 {
+		if int(buf[2]) != getBufLen(buf)-4 {
 			continue
 		}
 
@@ -370,6 +370,7 @@ func readResponse(s *Sl500) ([]byte, error) {
 		return nil, fmt.Errorf("Response verification failed")
 	}
 
+	buf = filterBuf(buf)
 	buf = buf[5 : len(buf)-1]
 
 	if s.logging {
@@ -377,6 +378,35 @@ func readResponse(s *Sl500) ([]byte, error) {
 	}
 
 	return buf, nil
+}
+
+func getBufLen(buf []byte) int {
+	l := len(buf)
+	for i, b := range buf {
+		if i < 2 {
+			continue
+		}
+
+		if b == 0xAA {
+			l--
+		}
+	}
+	return l
+}
+
+func filterBuf(buf []byte) []byte {
+	result := make([]byte, getBufLen(buf))
+
+	ind := 0
+	for i, b := range buf {
+		if i > 0 && buf[i - 1] == 0xAA && b == 0x00 {
+			continue
+		}
+
+		result[ind] = b
+		ind++
+	}
+	return result
 }
 
 func sendRequest(s *Sl500, commandCode int16, bytesData ...[]byte) error {
