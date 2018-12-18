@@ -79,15 +79,14 @@ func NewConnection(path string, baud baud, logging bool) (Sl500, error) {
 	res.logging = logging
 	res.open = true
 
-	_, err = res.RfInitCom(baud.ByteValue)
-	if err != nil {
-		return res, err
-	}
-
 	return res, nil
 }
 
 func (s *Sl500) Open() error {
+	if s.open {
+		return errors.New("port already opened")
+	}
+
 	p, err := serial.OpenPort(s.config)
 
 	if err != nil {
@@ -101,6 +100,10 @@ func (s *Sl500) Open() error {
 }
 
 func (s *Sl500) Close() error {
+	if s.port == nil || !s.open {
+		return errors.New("port not opened")
+	}
+
 	err := s.port.Close()
 	s.open = false
 
