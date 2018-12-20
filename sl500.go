@@ -377,7 +377,7 @@ func readResponse(s *Sl500) ([]byte, error) {
 	buf = buf[5 : len(buf)-1]
 
 	if s.logging {
-		fmt.Printf("<- %X\n", buf)
+		fmt.Printf("sl500[%v]: <- %X\n", s.config.Name, buf)
 	}
 
 	return buf, nil
@@ -443,7 +443,7 @@ func sendRequest(s *Sl500, commandCode int16, bytesData ...[]byte) error {
 	_ = binary.Write(buf, binary.BigEndian, ver)
 
 	if s.logging {
-		fmt.Printf("-> %X\n", buf.Bytes())
+		fmt.Printf("sl500[%v]: -> %X\n", s.config.Name, buf.Bytes())
 	}
 
 	_, err := s.port.Write(buf.Bytes())
