@@ -64,6 +64,11 @@ type Sl500 struct {
 	open    bool
 }
 
+type response struct {
+	data []byte
+	err  error
+}
+
 func NewConnection(path string, baud baud, logging bool) (Sl500, error) {
 	c := &serial.Config{Name: path, Baud: baud.IntValue, ReadTimeout: 5 * time.Second} // TODO
 	o, err := serial.OpenPort(c)
@@ -117,7 +122,7 @@ func (s *Sl500) RfInitCom(baud byte) ([]byte, error) {
 		return nil, err
 	}
 
-	return readResponse(s)
+	return readResponseWithTimeout(s)
 }
 
 func (s *Sl500) RfInitDeviceNumber(deviceId []byte) ([]byte, error) {
@@ -127,7 +132,7 @@ func (s *Sl500) RfInitDeviceNumber(deviceId []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	return readResponse(s)
+	return readResponseWithTimeout(s)
 }
 
 func (s *Sl500) RfGetDeviceNumber() ([]byte, error) {
@@ -137,7 +142,7 @@ func (s *Sl500) RfGetDeviceNumber() ([]byte, error) {
 		return nil, err
 	}
 
-	return readResponse(s)
+	return readResponseWithTimeout(s)
 }
 
 func (s *Sl500) RfGetModel() ([]byte, error) {
@@ -147,7 +152,7 @@ func (s *Sl500) RfGetModel() ([]byte, error) {
 		return nil, err
 	}
 
-	return readResponse(s)
+	return readResponseWithTimeout(s)
 }
 
 func (s *Sl500) RfAntennaSta(antennaState byte) ([]byte, error) {
@@ -157,7 +162,7 @@ func (s *Sl500) RfAntennaSta(antennaState byte) ([]byte, error) {
 		return nil, err
 	}
 
-	return readResponse(s)
+	return readResponseWithTimeout(s)
 }
 
 func (s *Sl500) RfInitType(workType byte) ([]byte, error) {
@@ -167,7 +172,7 @@ func (s *Sl500) RfInitType(workType byte) ([]byte, error) {
 		return nil, err
 	}
 
-	return readResponse(s)
+	return readResponseWithTimeout(s)
 }
 
 func (s *Sl500) RfBeep(durationMs byte) ([]byte, error) {
@@ -177,7 +182,7 @@ func (s *Sl500) RfBeep(durationMs byte) ([]byte, error) {
 		return nil, err
 	}
 
-	return readResponse(s)
+	return readResponseWithTimeout(s)
 }
 
 func (s *Sl500) RfLight(color byte) ([]byte, error) {
@@ -187,7 +192,7 @@ func (s *Sl500) RfLight(color byte) ([]byte, error) {
 		return nil, err
 	}
 
-	return readResponse(s)
+	return readResponseWithTimeout(s)
 }
 
 func (s *Sl500) RfRequest(requestType byte) ([]byte, error) {
@@ -197,7 +202,7 @@ func (s *Sl500) RfRequest(requestType byte) ([]byte, error) {
 		return nil, err
 	}
 
-	return readResponse(s)
+	return readResponseWithTimeout(s)
 }
 
 func (s *Sl500) RfAnticoll() ([]byte, error) {
@@ -207,7 +212,7 @@ func (s *Sl500) RfAnticoll() ([]byte, error) {
 		return nil, err
 	}
 
-	return readResponse(s)
+	return readResponseWithTimeout(s)
 }
 
 func (s *Sl500) RfSelect(serialNumber []byte) ([]byte, error) {
@@ -217,7 +222,7 @@ func (s *Sl500) RfSelect(serialNumber []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	return readResponse(s)
+	return readResponseWithTimeout(s)
 }
 
 func (s *Sl500) RfHalt() ([]byte, error) {
@@ -227,7 +232,7 @@ func (s *Sl500) RfHalt() ([]byte, error) {
 		return nil, err
 	}
 
-	return readResponse(s)
+	return readResponseWithTimeout(s)
 }
 
 func (s *Sl500) RfM1Authentication2(authMode byte, blockNumber byte, key []byte) ([]byte, error) {
@@ -237,7 +242,7 @@ func (s *Sl500) RfM1Authentication2(authMode byte, blockNumber byte, key []byte)
 		return nil, err
 	}
 
-	return readResponse(s)
+	return readResponseWithTimeout(s)
 }
 
 func (s *Sl500) RfM1Read(blockNumber byte) ([]byte, error) {
@@ -247,7 +252,7 @@ func (s *Sl500) RfM1Read(blockNumber byte) ([]byte, error) {
 		return nil, err
 	}
 
-	return readResponse(s)
+	return readResponseWithTimeout(s)
 }
 
 func (s *Sl500) RfM1Write(blockNumber byte, data []byte) ([]byte, error) {
@@ -257,7 +262,7 @@ func (s *Sl500) RfM1Write(blockNumber byte, data []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	return readResponse(s)
+	return readResponseWithTimeout(s)
 }
 
 func (s *Sl500) RfM1Initval(blockNumber byte, initialValue []byte) ([]byte, error) {
@@ -267,7 +272,7 @@ func (s *Sl500) RfM1Initval(blockNumber byte, initialValue []byte) ([]byte, erro
 		return nil, err
 	}
 
-	return readResponse(s)
+	return readResponseWithTimeout(s)
 }
 
 func (s *Sl500) RfM1Readval(blockNumber byte) ([]byte, error) {
@@ -277,7 +282,7 @@ func (s *Sl500) RfM1Readval(blockNumber byte) ([]byte, error) {
 		return nil, err
 	}
 
-	return readResponse(s)
+	return readResponseWithTimeout(s)
 }
 
 func (s *Sl500) RfM1Decrement(blockNumber byte, decrementValue []byte) ([]byte, error) {
@@ -287,7 +292,7 @@ func (s *Sl500) RfM1Decrement(blockNumber byte, decrementValue []byte) ([]byte, 
 		return nil, err
 	}
 
-	return readResponse(s)
+	return readResponseWithTimeout(s)
 }
 
 func (s *Sl500) RfM1Increment(blockNumber byte, incrementValue []byte) ([]byte, error) {
@@ -297,7 +302,7 @@ func (s *Sl500) RfM1Increment(blockNumber byte, incrementValue []byte) ([]byte, 
 		return nil, err
 	}
 
-	return readResponse(s)
+	return readResponseWithTimeout(s)
 }
 
 func (s *Sl500) RfM1Restore(blockNumber byte) ([]byte, error) {
@@ -307,7 +312,7 @@ func (s *Sl500) RfM1Restore(blockNumber byte) ([]byte, error) {
 		return nil, err
 	}
 
-	return readResponse(s)
+	return readResponseWithTimeout(s)
 }
 
 func (s *Sl500) RfM1Transfer(blockNumber byte) ([]byte, error) {
@@ -317,7 +322,27 @@ func (s *Sl500) RfM1Transfer(blockNumber byte) ([]byte, error) {
 		return nil, err
 	}
 
-	return readResponse(s)
+	return readResponseWithTimeout(s)
+}
+
+func timeout(r chan response){
+	time.Sleep(3 * time.Second)
+
+	r <- response{err: errors.New("timeout")}
+}
+
+func readResponseWithTimeout(s *Sl500) ([]byte, error) {
+	inner := make(chan response)
+
+	go func() {
+		i, v := readResponse(s)
+		inner <- response{data: i, err: v}
+	}()
+	go timeout(inner)
+
+	v := <-inner
+
+	return v.data, v.err
 }
 
 func readResponse(s *Sl500) ([]byte, error) {
@@ -325,16 +350,8 @@ func readResponse(s *Sl500) ([]byte, error) {
 	innerBuf := make([]byte, 128)
 
 	totalRead := 0
-	readTriesCount := 0
-	maxReadCount := 50
 
 	for ; ; {
-		readTriesCount += 1
-
-		if readTriesCount >= maxReadCount {
-			return nil, fmt.Errorf("Reads tries exceeded")
-		}
-
 		n, err := s.port.Read(innerBuf)
 
 		if err != nil {
