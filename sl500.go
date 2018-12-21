@@ -62,6 +62,7 @@ type Sl500 struct {
 	port    *serial.Port
 	logging bool
 	open    bool
+	timeout time.Duration
 }
 
 type response struct {
@@ -69,8 +70,12 @@ type response struct {
 	err  error
 }
 
-func NewConnection(path string, baud baud, logging bool) (Sl500, error) {
-	c := &serial.Config{Name: path, Baud: baud.IntValue, ReadTimeout: 5 * time.Second} // TODO
+func NewConnection(path string, baud baud, logging bool, timeout time.Duration) (Sl500, error) {
+	if timeout == 0 {
+		timeout = 3 * time.Second
+	}
+
+	c := &serial.Config{Name: path, Baud: baud.IntValue, ReadTimeout: timeout}
 	o, err := serial.OpenPort(c)
 
 	res := Sl500{}
@@ -83,6 +88,7 @@ func NewConnection(path string, baud baud, logging bool) (Sl500, error) {
 	res.port = o
 	res.logging = logging
 	res.open = true
+	res.timeout = timeout
 
 	return res, nil
 }
@@ -325,8 +331,8 @@ func (s *Sl500) RfM1Transfer(blockNumber byte) ([]byte, error) {
 	return readResponseWithTimeout(s)
 }
 
-func timeout(r chan response){
-	time.Sleep(3 * time.Second)
+func timeout(timeout time.Duration, r chan response) {
+	time.Sleep(timeout)
 
 	r <- response{err: errors.New("timeout")}
 }
@@ -338,7 +344,7 @@ func readResponseWithTimeout(s *Sl500) ([]byte, error) {
 		i, v := readResponse(s)
 		inner <- response{data: i, err: v}
 	}()
-	go timeout(inner)
+	go timeout(s.timeout, inner)
 
 	v := <-inner
 
@@ -419,7 +425,7 @@ func filterBuf(buf []byte) []byte {
 
 	ind := 0
 	for i, b := range buf {
-		if i > 0 && buf[i - 1] == 0xAA && b == 0x00 {
+		if i > 0 && buf[i-1] == 0xAA && b == 0x00 {
 			continue
 		}
 

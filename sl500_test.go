@@ -5,10 +5,11 @@ import (
 	"sl500-api"
 	"fmt"
 	"reflect"
+	"time"
 )
 
 func TestCanReadCard(t *testing.T) {
-	reader, err := sl500_api.NewConnection("COM3", sl500_api.Baud.Baud19200, true)
+	reader, err := sl500_api.NewConnection("COM3", sl500_api.Baud.Baud19200, true, 3 * time.Second)
 	reader.RfAntennaSta(sl500_api.AntennaOn)
 	if err != nil {
 		t.Fatal(err)
