@@ -331,6 +331,26 @@ func (s *Sl500) RfM1Transfer(blockNumber byte) ([]byte, error) {
 	return readResponseWithTimeout(s)
 }
 
+func (s *Sl500) ISO15693_Inventorys() ([][]byte, error) {
+	err := sendRequest(s, 0x0010, []byte{})
+
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := readResponseWithTimeout(s)
+	
+	if err != nil {
+		return nil, err
+	}
+	
+	var tags [][]byte
+	for i := 0; i < len(data); i += 9 {
+		tags = append(tags, data[i:i+9])
+	}
+	return tags, nil
+}
+
 func timeout(timeout time.Duration, r chan response) {
 	time.Sleep(timeout)
 
