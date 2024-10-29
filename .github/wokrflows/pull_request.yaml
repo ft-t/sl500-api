@@ -1,0 +1,17 @@
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    container: golang:1.23-alpine
+    steps:
+      - uses: actions/checkout@v4
+      - run: apk update && apk add curl openssl git openssh-client build-base && mkdir -p /root/.ssh
+      - uses: golangci/golangci-lint-action@v6.1.1
+        if: github.ref != 'refs/heads/master' && github.ref != 'refs/heads/qa' && github.ref != 'refs/heads/uat'
+        with:
+          version: latest
+          args: --timeout=5m --tests=false ./...

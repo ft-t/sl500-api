@@ -339,11 +339,11 @@ func (s *Sl500) ISO15693_Inventorys() ([][]byte, error) {
 	}
 
 	data, err := readResponseWithTimeout(s)
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var tags [][]byte
 	for i := 0; i < len(data); i += 9 {
 		tags = append(tags, data[i:i+9])
@@ -377,7 +377,7 @@ func readResponse(s *Sl500) ([]byte, error) {
 
 	totalRead := 0
 
-	for ; ; {
+	for {
 		n, err := s.port.Read(innerBuf)
 
 		if err != nil {
